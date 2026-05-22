@@ -1,0 +1,16 @@
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Signing key — NEVER commit.
+catalog-signing.key
+catalog-signing
+catalog-signing.*
+*.priv
+*.pem.priv
+
+# tools/sign build artefacts.
+tools/sign/target/
