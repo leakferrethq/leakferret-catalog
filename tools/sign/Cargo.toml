@@ -1,0 +1,30 @@
+﻿[package]
+name        = "leakferret-catalog-sign"
+version     = "0.1.0"
+edition     = "2021"
+description = "Standalone helper that signs a leakferret fixture catalog with an Ed25519 private key."
+license     = "MIT"
+publish     = false
+
+[[bin]]
+name = "sign"
+path = "src/main.rs"
+
+[dependencies]
+# Path-dep to the engine crate. The path is resolved relative to this
+# Cargo.toml, i.e. <repo-parent>/leakferret/crates/leakferret-core.
+# Using a path reference here is intentional: `sign_catalog()` defines
+# the canonical-payload format and we want exactly one implementation
+# of it in the world.
+#
+# NOTE: the engine repo's parent directory is currently `secrets-dev/`
+# on disk (the rename to `leakferret/` is pending a session restart â€”
+# Windows holds an open handle on the active Claude Code project root).
+# Flip this back to `leakferret` after the parent directory is renamed.
+leakferret-core = { path = "../../../leakferret/crates/leakferret-core" }
+
+anyhow        = "1.0"
+clap          = { version = "4.5", features = ["derive"] }
+ed25519-dalek = { version = "2.1", features = ["pem"] }
+serde_json    = "1.0"
+
