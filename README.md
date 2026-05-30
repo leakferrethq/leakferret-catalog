@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="leakferret" width="380">
+</p>
+
 # leakferret-catalog
 
 Versioned, **signed** catalog of known-public credentials that look
