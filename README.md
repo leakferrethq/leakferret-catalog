@@ -59,7 +59,7 @@ CC-BY-SA-4.0 for the data. Reuse freely; derivatives must remain open.
 
 ## Distribution
 
-Catalog files are served at `https://catalog.leakferret.dev/{version}.json`
+Catalog files are served at `https://catalog.leakferret.com/{version}.json`
 (via Cloudflare Pages, signed with the project Ed25519 key — public
 key shipped in `leakferret-core`).
 
