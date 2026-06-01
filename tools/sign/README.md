@@ -14,36 +14,59 @@ machine that talks to the catalog CDN. Sign offline; publish online.
 The matching public key gets embedded into `leakferret-core` and ships
 with every binary release.
 
+## Status
+
+The signing keypair has been generated and the public key is embedded in
+`leakferret-core`:
+
+```
+EMBEDDED_PUBLIC_KEY = Some("VxGTRy8eoWkb6k9s7noAbtSybHve4mGYymhV7y70cRI=")
+```
+
+So steps 1 and 2 below are already done. What remains for each catalog release
+is signing (step 3) and publishing to the CDN (step 4), both done offline with
+the private key — never on a CI runner.
+
 ## Procedure
 
 ```text
-1. Generate keypair (once, offline):
+1. Generate keypair (DONE — once, offline):
 
-   ssh-keygen -t ed25519 -f catalog-signing -C 'leakferret catalog signing key'
+   openssl genpkey -algorithm ed25519 -out catalog-ed25519.pem
+   # Keep this PKCS#8 PEM private key on a hardware token / air-gapped disk.
+   # NEVER commit it.
 
-   # Move private key to YubiKey / hardware HSM / air-gapped disk.
-   # NEVER commit catalog-signing or catalog-signing.pub to git.
+2. Embed public key in leakferret-core (DONE):
 
-2. Embed public key in leakferret-core:
+   openssl pkey -in catalog-ed25519.pem -pubout -outform DER | tail -c 32 | base64
+   # -> pasted into crates/leakferret-core/src/catalog/signature.rs as
+   #    EMBEDDED_PUBLIC_KEY, with the matching value asserted in its test.
 
-   # Read the public-key bytes
-   ssh-keygen -e -m PKCS8 -f catalog-signing.pub  # for inspection
-   # Convert to raw 32 bytes + base64-encode
-   # Paste into crates/leakferret-core/src/catalog/signature.rs as
-   # EMBEDDED_PUBLIC_KEY = Some("...")
-
-3. Sign a new catalog version:
+3. Sign each dated catalog version (offline, on a machine with a Rust build):
 
    cargo run --bin sign -- \
      --input  ../../catalog/2026.05.27.json \
-     --key    /Volumes/secure/catalog-signing \
+     --key    /path/to/catalog-ed25519.pem \
      --output ../../catalog/2026.05.27.json
+
+   # Then update the latest.json pointer's checksum:
+   sum=$(sha256sum ../../catalog/2026.05.27.json | awk '{print $1}')
+   #   set "sha256" in ../../catalog/latest.json to $sum
 
 4. Publish:
 
-   # Upload signed JSON to https://catalog.<domain>/<version>.json
-   # Update latest.json pointer
+   # Upload the signed catalog/<version>.json and catalog/latest.json to
+   # https://catalog.leakferret.com/ so `leakferret catalog refresh` can
+   # fetch and verify them against the embedded public key.
 ```
+
+## Rotating the key
+
+Generate a fresh keypair, replace `EMBEDDED_PUBLIC_KEY` (and the expected value
+in its test) in `leakferret-core`, re-sign every published catalog file with the
+new private key, and cut a new engine release. Old binaries keep trusting the
+old key, so keep the previous catalog signed with the old key until those
+binaries age out.
 
 ## Key format
 
